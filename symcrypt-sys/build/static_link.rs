@@ -97,13 +97,13 @@ impl SymCryptOptions {
             }
 
             // Target all Linux targets
-            Triple::x86_64_unknown_linux_gnu | Triple::aarch64_unknown_linux_gnu => {
+            Triple::x86_64_unknown_linux_gnu | Triple::aarch64_unknown_linux_gnu | Triple::aarch64_apple_darwin | Triple::x86_64_apple_darwin=> {
                 // From lib/CmakeLists.txt
                 // Stack Protection ON by default for linux
                 cc.flag("-fstack-protector-strong")
                     .flag("-Wstack-protector")
                     .flag("--param=ssp-buffer-size=4")
-                    .flag("-fstack-clash-protection")
+                 //   .flag("-fstack-clash-protection")
                     .flag("-Wno-incompatible-pointer-types"); // Ignore noisy SymCrypt errors
 
                 // From lib/CmakeLists.txt
@@ -132,7 +132,7 @@ impl SymCryptOptions {
             Triple::aarch64_pc_windows_msvc => {
                 cc.define("_ARM64_", None);
             }
-            Triple::x86_64_unknown_linux_gnu => {
+            Triple::x86_64_unknown_linux_gnu | Triple::x86_64_apple_darwin=> {
                 // From SymCrypt-Platforms.cmake
                 // Only for x86_64_unknown_linux_gnu
                 cc.flag("-mssse3")
@@ -143,7 +143,7 @@ impl SymCryptOptions {
                     .flag("-mrdrnd")
                     .flag("-mrdseed");
             }
-            Triple::aarch64_unknown_linux_gnu => {
+            Triple::aarch64_unknown_linux_gnu | Triple::aarch64_apple_darwin=> {
                 // From SymCrypt-Platforms.cmake
                 cc.flag("-march=armv8-a+simd+crypto") // Enable a baseline of features for the compiler to support everywhere.
                     .flag("-flax-vector-conversions"); //  Setting -flax-vector-conversions to build Arm64 intrinsics code with GCC.
@@ -325,6 +325,10 @@ fn compile_symcrypt_static(lib_name: &str, options: &SymCryptOptions) -> std::io
             base_files.push("env_posixUserMode.c");
             module_files.push("inc/static_LinuxDefault.c");
         }
+        Triple::aarch64_apple_darwin | Triple::x86_64_apple_darwin => {
+            base_files.push("env_posixUserMode.c");
+            module_files.push("inc/static_MacDefault.c");
+        }
     }
 
     // Add assembly pre generated ASM files to be compiled
@@ -344,7 +348,7 @@ fn compile_symcrypt_static(lib_name: &str, options: &SymCryptOptions) -> std::io
         Triple::aarch64_pc_windows_msvc => {
             vec!["fdef_asm-gas.asm", "fdef369_asm-gas.asm", "wipe-gas.asm"]
         }
-        Triple::x86_64_unknown_linux_gnu => vec![
+        Triple::x86_64_unknown_linux_gnu | Triple::x86_64_apple_darwin => vec![
             "aesasm-gas.asm",
             "fdef_asm-gas.asm",
             "fdef369_asm-gas.asm",
@@ -355,7 +359,7 @@ fn compile_symcrypt_static(lib_name: &str, options: &SymCryptOptions) -> std::io
             "sha512ymm_asm-gas.asm",
             "sha512ymm_avx512vl_asm-gas.asm",
         ],
-        Triple::aarch64_unknown_linux_gnu => {
+        Triple::aarch64_unknown_linux_gnu | Triple::aarch64_apple_darwin => {
             vec!["fdef_asm-gas.asm", "fdef369_asm-gas.asm", "wipe-gas.asm"]
         }
     };
